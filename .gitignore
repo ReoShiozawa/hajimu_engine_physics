@@ -1,0 +1,4 @@
+build/
+*.hjp
+*.dSYM/
+.DS_Store
