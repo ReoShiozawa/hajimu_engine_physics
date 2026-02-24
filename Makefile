@@ -1,27 +1,53 @@
-PLUGIN_NAME   = engine_physics
-BUILD_DIR     = build
-INSTALL_DIR   = $(HOME)/.hajimu/plugins/$(PLUGIN_NAME)
-OUTPUT        = $(BUILD_DIR)/$(PLUGIN_NAME).hjp
+# =============================================================================
+# engine_physics — はじむ言語用プラグイン
+# クロスプラットフォーム Makefile (macOS / Linux / Windows MinGW)
+# =============================================================================
 
-NCPU = $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
+PLUGIN_NAME = engine_physics
+BUILD_DIR   = build
+OUTPUT      = $(BUILD_DIR)/$(PLUGIN_NAME).hjp
 
+# OS 判定 ($(OS) は Windows CMD/PowerShell で "Windows_NT" になる)
+ifeq ($(OS),Windows_NT)
+    DETECTED_OS := Windows
+    INSTALL_DIR := $(USERPROFILE)/.hajimu/plugins
+    NCPU        := $(NUMBER_OF_PROCESSORS)
+else
+    DETECTED_OS := $(shell uname -s 2>/dev/null || echo Unknown)
+    INSTALL_DIR := $(HOME)/.hajimu/plugins
+    NCPU        := $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
+endif
+
+CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=Release -Wno-dev
 .PHONY: all clean install uninstall
 
 all: $(OUTPUT)
 
-$(OUTPUT): $(BUILD_DIR)/Makefile
+$(OUTPUT): CMakeLists.txt
+	cmake -S . -B $(BUILD_DIR) $(CMAKE_FLAGS)
 	cmake --build $(BUILD_DIR) -j$(NCPU)
-
-$(BUILD_DIR)/Makefile: CMakeLists.txt
-	cmake -S . -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=Release -Wno-dev
-
+	@echo "  ビルド完了: $(OUTPUT)"
+clean:
+ifeq ($(OS),Windows_NT)
+	-rmdir /S /Q $(BUILD_DIR) 2>NUL
+else
+	rm -rf $(BUILD_DIR)
+endif
+	@echo "  クリーン完了"
 install: all
-	@mkdir -p $(INSTALL_DIR)
-	cp $(OUTPUT) $(INSTALL_DIR)/
-	@echo "  インストール: $(INSTALL_DIR)/$(PLUGIN_NAME).hjp"
+ifeq ($(OS),Windows_NT)
+	if not exist "$(INSTALL_DIR)\$(PLUGIN_NAME)" mkdir "$(INSTALL_DIR)\$(PLUGIN_NAME)"
+	copy /Y $(OUTPUT) "$(INSTALL_DIR)\$(PLUGIN_NAME)"
+else
+	@mkdir -p $(INSTALL_DIR)/$(PLUGIN_NAME)
+	cp $(OUTPUT) $(INSTALL_DIR)/$(PLUGIN_NAME)/
+endif
+	@echo "  インストール完了: $(INSTALL_DIR)/$(PLUGIN_NAME)/"
 
 uninstall:
-	rm -f $(INSTALL_DIR)/$(PLUGIN_NAME).hjp
-
-clean:
-	rm -rf $(BUILD_DIR)
+ifeq ($(OS),Windows_NT)
+	-rmdir /S /Q "$(INSTALL_DIR)\$(PLUGIN_NAME)" 2>NUL
+else
+	rm -rf $(INSTALL_DIR)/$(PLUGIN_NAME)
+endif
+	@echo "  アンインストール完了"
