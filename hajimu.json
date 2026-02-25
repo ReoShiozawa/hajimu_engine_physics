@@ -62,5 +62,6 @@
     "接触剛体取得",
     "接触情報取得"
   ],
+  "repository": "https://github.com/ReoShiozawa/hajimu_engine_physics",
   "ビルド": "make build/engine_physics.hjp"
 }
