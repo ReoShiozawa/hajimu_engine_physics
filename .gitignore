@@ -1,4 +1,4 @@
-build/
-*.hjp
+build/*
+!build/*.hjp
 *.dSYM/
 .DS_Store
